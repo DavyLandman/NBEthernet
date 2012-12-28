@@ -32,6 +32,7 @@ void DhcpClass::reset_DHCP_lease(){
     memset(_dhcpLocalIp, 0, 20);
 }
 
+// 0 = not finished, 1 = finished and successful, 2 = finished but failed 
 int DhcpClass::successful() {
 	int result = step_DHCP_lease();
 	if ((millis() - _startTime) > _timeout) {

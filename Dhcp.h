@@ -177,6 +177,7 @@ public:
   IPAddress getDnsServerIp();
   
   void beginWithDHCP(uint8_t *, unsigned long timeout = 60000, unsigned long responseTimeout = 4000);
+  // 0 = not finished, 1 = finished and successful, 2 = finished but failed 
   int successful();
   int checkLease();
 };
