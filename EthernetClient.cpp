@@ -20,7 +20,7 @@ EthernetClient::EthernetClient() : _sock(MAX_SOCK_NUM) {
 EthernetClient::EthernetClient(uint8_t sock) : _sock(sock) {
 }
 
-int EthernetClient::connect(const char* host, uint16_t port) {
+int EthernetClient::initConnection(const char *host, uint16_t port) {
   // Look up the host first
   int ret = 0;
   DNSClient dns;
@@ -29,15 +29,29 @@ int EthernetClient::connect(const char* host, uint16_t port) {
   dns.begin(Ethernet.dnsServerIP());
   ret = dns.getHostByName(host, remote_addr);
   if (ret == 1) {
-    return connect(remote_addr, port);
+    return initConnection(remote_addr, port);
   } else {
     return ret;
   }
 }
+int EthernetClient::connect(const char* host, uint16_t port) {
+	if (!initConnection(host, port)) {
+		return 0;
+	}
+	int result = 0;
+	while (result == 0) {
+		result = finishedConnecting();
+		if (result == 0) {
+			delay(1);
+		}
+	}
+	return result == 1;
+}
 
-int EthernetClient::connect(IPAddress ip, uint16_t port) {
-  if (_sock != MAX_SOCK_NUM)
-    return 0;
+int EthernetClient::initConnection(IPAddress ip, uint16_t port) {
+  if (_sock != MAX_SOCK_NUM) {
+    return 0; 
+  }
 
   for (int i = 0; i < MAX_SOCK_NUM; i++) {
     uint8_t s = W5100.readSnSR(i);
@@ -46,7 +60,6 @@ int EthernetClient::connect(IPAddress ip, uint16_t port) {
       break;
     }
   }
-
   if (_sock == MAX_SOCK_NUM)
     return 0;
 
@@ -58,16 +71,42 @@ int EthernetClient::connect(IPAddress ip, uint16_t port) {
     _sock = MAX_SOCK_NUM;
     return 0;
   }
-
-  while (status() != SnSR::ESTABLISHED) {
-    delay(1);
-    if (status() == SnSR::CLOSED) {
-      _sock = MAX_SOCK_NUM;
-      return 0;
-    }
-  }
-
+  _established = 0;
   return 1;
+}
+
+int EthernetClient::connect(IPAddress ip, uint16_t port) {
+	if (!initConnection(ip, port)) {
+		return 0;
+	}
+	int result = 0;
+	while (result == 0) {
+		result = finishedConnecting();
+		if (result == 0) {
+			delay(1);
+		}
+	}
+	return result == 1;
+}
+
+uint8_t EthernetClient::finishedConnecting() {
+	if (_established) {
+		return _established;
+	}
+	if (_sock == MAX_SOCK_NUM) {
+		return 2;
+	}
+	if (status() != SnSR::ESTABLISHED) {
+		_established = 0;
+		if (status() == SnSR::CLOSED) {
+			_sock = MAX_SOCK_NUM;
+			return 2;
+		}
+	}
+	else {
+		_established = 1;
+	}
+	return _established;
 }
 
 size_t EthernetClient::write(uint8_t b) {

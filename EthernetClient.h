@@ -14,6 +14,9 @@ public:
   uint8_t status();
   virtual int connect(IPAddress ip, uint16_t port);
   virtual int connect(const char *host, uint16_t port);
+  virtual int initConnection(const char *host, uint16_t port);
+  virtual int initConnection(IPAddress ip, uint16_t port);
+  virtual uint8_t finishedConnecting();
   virtual size_t write(uint8_t);
   virtual size_t write(const uint8_t *buf, size_t size);
   virtual int available();
@@ -32,6 +35,7 @@ public:
 private:
   static uint16_t _srcport;
   uint8_t _sock;
+  uint8_t _established;
 };
 
 #endif
