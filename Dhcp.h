@@ -13,6 +13,7 @@
 #define	STATE_DHCP_LEASED	3
 #define	STATE_DHCP_REREQUEST	4
 #define	STATE_DHCP_RELEASE	5
+#define	STATE_DHCP_CONNECTION_FAILED	6
 
 #define DHCP_FLAGSBROADCAST	0x8000
 
@@ -156,14 +157,18 @@ private:
   unsigned long _secTimeout;
   uint8_t _dhcp_state;
   EthernetUDP _dhcpUdpSocket;
+  uint32_t _startTime;
+  uint32_t _startResponseTime;
   
+  void init_new_DHCP_request();
   int request_DHCP_lease();
+  int step_DHCP_lease();
   void reset_DHCP_lease();
   void presend_DHCP();
   void send_DHCP_MESSAGE(uint8_t, uint16_t);
   void printByte(char *, uint8_t);
   
-  uint8_t parseDHCPResponse(unsigned long responseTimeout, uint32_t& transactionId);
+  uint8_t tryParseDHCPResponse(uint32_t& transactionId);
 public:
   IPAddress getLocalIp();
   IPAddress getSubnetMask();
@@ -171,7 +176,8 @@ public:
   IPAddress getDhcpServerIp();
   IPAddress getDnsServerIp();
   
-  int beginWithDHCP(uint8_t *, unsigned long timeout = 60000, unsigned long responseTimeout = 4000);
+  void beginWithDHCP(uint8_t *, unsigned long timeout = 60000, unsigned long responseTimeout = 4000);
+  int successful();
   int checkLease();
 };
 

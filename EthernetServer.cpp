@@ -4,7 +4,7 @@ extern "C" {
 #include "string.h"
 }
 
-#include "Ethernet.h"
+#include "NBEthernet.h"
 #include "EthernetClient.h"
 #include "EthernetServer.h"
 

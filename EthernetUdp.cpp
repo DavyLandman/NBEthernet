@@ -28,7 +28,7 @@
 
 #include "w5100.h"
 #include "socket.h"
-#include "Ethernet.h"
+#include "NBEthernet.h"
 #include "Udp.h"
 #include "Dns.h"
 

@@ -8,29 +8,39 @@ uint8_t EthernetClass::_state[MAX_SOCK_NUM] = {
 uint16_t EthernetClass::_server_port[MAX_SOCK_NUM] = { 
   0, 0, 0, 0 };
 
-int EthernetClass::begin(uint8_t *mac_address)
+int EthernetClass::initialized() {
+	if (_dhcp == NULL || _initialized) {
+		return 1;
+	}
+	int result = _dhcp->successful();
+	if (result == 1) {
+		// We've successfully found a DHCP server and got our configuration info, so set things
+		// accordingly
+		W5100.setIPAddress(_dhcp->getLocalIp().raw_address());
+		W5100.setGatewayIp(_dhcp->getGatewayIp().raw_address());
+		W5100.setSubnetMask(_dhcp->getSubnetMask().raw_address());
+		_dnsServerAddress = _dhcp->getDnsServerIp();
+		_initialized = 1;
+	}
+	if (result == 2) {
+		_initialized = 1;
+	}
+	return result;
+}
+
+
+void EthernetClass::begin(uint8_t *mac_address)
 {
-  _dhcp = new DhcpClass();
+	_dhcp = new DhcpClass();
 
+	// Initialise the basic info
+	W5100.init();
+	W5100.setMACAddress(mac_address);
+	W5100.setIPAddress(IPAddress(0,0,0,0).raw_address());
 
-  // Initialise the basic info
-  W5100.init();
-  W5100.setMACAddress(mac_address);
-  W5100.setIPAddress(IPAddress(0,0,0,0).raw_address());
-
-  // Now try to get our config info from a DHCP server
-  int ret = _dhcp->beginWithDHCP(mac_address);
-  if(ret == 1)
-  {
-    // We've successfully found a DHCP server and got our configuration info, so set things
-    // accordingly
-    W5100.setIPAddress(_dhcp->getLocalIp().raw_address());
-    W5100.setGatewayIp(_dhcp->getGatewayIp().raw_address());
-    W5100.setSubnetMask(_dhcp->getSubnetMask().raw_address());
-    _dnsServerAddress = _dhcp->getDnsServerIp();
-  }
-
-  return ret;
+	// Now try to get our config info from a DHCP server
+	_dhcp->beginWithDHCP(mac_address);
+	_initialized = 0;
 }
 
 void EthernetClass::begin(uint8_t *mac_address, IPAddress local_ip)
@@ -65,6 +75,7 @@ void EthernetClass::begin(uint8_t *mac, IPAddress local_ip, IPAddress dns_server
   W5100.setGatewayIp(gateway._address);
   W5100.setSubnetMask(subnet._address);
   _dnsServerAddress = dns_server;
+  _initialized = 0;
 }
 
 int EthernetClass::maintain(){
