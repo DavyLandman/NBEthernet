@@ -173,7 +173,6 @@ int DNSClient::startHostRequest(const char* aHostname, IPAddress& aResult)
             }
             retries++;
         }
-
         // We're done with the socket now
         iUdp.stop();
     }
@@ -264,19 +263,22 @@ int DNSClient::getHostRequestResult(IPAddress& aAddress) {
 	if (!_resolving) {
 		return 2;
 	}
-	int ret = ProcessResponse(aAddress);
+	uint16_t ret = ProcessResponse(aAddress);
 	if (ret == SUCCESS) {
 		_resolving = 0;
+		iUdp.stop();
 		return 1;
 	}
 	else if (ret == 255) {
 		if ((millis() - _startResolving) > 15000UL) {
 			_resolving = 0;
+			iUdp.stop();
 			return 2;
 		}
 	}
 	else {
 		_resolving = 0;
+        iUdp.stop();
 		return 2;
 	}
 
