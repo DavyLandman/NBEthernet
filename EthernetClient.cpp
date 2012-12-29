@@ -21,18 +21,23 @@ EthernetClient::EthernetClient(uint8_t sock) : _sock(sock) {
 }
 
 int EthernetClient::initConnection(const char *host, uint16_t port) {
-  // Look up the host first
-  int ret = 0;
-  DNSClient dns;
-  IPAddress remote_addr;
-
-  dns.begin(Ethernet.dnsServerIP());
-  ret = dns.getHostByName(host, remote_addr);
-  if (ret == 1) {
-    return initConnection(remote_addr, port);
-  } else {
-    return ret;
-  }
+	IPAddress ip;
+	_dns = new DNSClient();
+	_dns->begin(Ethernet.dnsServerIP());
+	int res = _dns->startHostRequest(host, ip);
+	if (res == 0) {
+		_dnsresolved = 0;
+		_port = port;
+		return 1;
+	}
+	else if (res == 1) {
+		delete _dns;
+		return initConnection(ip, port);
+	}
+	else {
+		delete _dns;
+		return 0;
+	}
 }
 int EthernetClient::connect(const char* host, uint16_t port) {
 	if (!initConnection(host, port)) {
@@ -49,6 +54,7 @@ int EthernetClient::connect(const char* host, uint16_t port) {
 }
 
 int EthernetClient::initConnection(IPAddress ip, uint16_t port) {
+  _dnsresolved = 1;
   if (_sock != MAX_SOCK_NUM) {
     return 0; 
   }
@@ -90,23 +96,40 @@ int EthernetClient::connect(IPAddress ip, uint16_t port) {
 }
 
 uint8_t EthernetClient::finishedConnecting() {
-	if (_established) {
-		return _established;
-	}
-	if (_sock == MAX_SOCK_NUM) {
-		return 2;
-	}
-	if (status() != SnSR::ESTABLISHED) {
-		_established = 0;
-		if (status() == SnSR::CLOSED) {
+	if (!_dnsresolved) {
+		IPAddress ip;
+		int result = _dns->getHostRequestResult(ip);
+		if (result == 1) {
+			_dnsresolved = 1;
+			delete _dns;
+			return initConnection(ip, _port) == 1 ? 0 : 2;
+		}
+		else if (result > 1) {
+			delete _dns;
 			_sock = MAX_SOCK_NUM;
 			return 2;
 		}
+		return 0;
 	}
 	else {
-		_established = 1;
+		if (_established) {
+			return _established;
+		}
+		if (_sock == MAX_SOCK_NUM) {
+			return 2;
+		}
+		if (status() != SnSR::ESTABLISHED) {
+			_established = 0;
+			if (status() == SnSR::CLOSED) {
+				_sock = MAX_SOCK_NUM;
+				return 2;
+			}
+		}
+		else {
+			_established = 1;
+		}
+		return _established;
 	}
-	return _established;
 }
 
 size_t EthernetClient::write(uint8_t b) {

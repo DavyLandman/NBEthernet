@@ -3,6 +3,7 @@
 #include "Arduino.h"	
 #include "Print.h"
 #include "Client.h"
+#include "Dns.h"
 #include "IPAddress.h"
 
 class EthernetClient : public Client {
@@ -36,6 +37,10 @@ private:
   static uint16_t _srcport;
   uint8_t _sock;
   uint8_t _established;
+  uint8_t _dnsresolved;
+  uint16_t _port;
+  
+  DNSClient* _dns;
 };
 
 #endif

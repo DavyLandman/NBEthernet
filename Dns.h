@@ -28,14 +28,18 @@ public:
                 else error code
     */
     int getHostByName(const char* aHostname, IPAddress& aResult);
+    int startHostRequest(const char* aHostname, IPAddress& aResult);
+    int getHostRequestResult(IPAddress& aResult);
 
 protected:
     uint16_t BuildRequest(const char* aName);
-    uint16_t ProcessResponse(uint16_t aTimeout, IPAddress& aAddress);
+    uint16_t ProcessResponse(IPAddress& aAddress);
 
     IPAddress iDNSServer;
     uint16_t iRequestId;
     EthernetUDP iUdp;
+	uint8_t _resolving;
+	uint32_t _startResolving; 
 };
 
 #endif

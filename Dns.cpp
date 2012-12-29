@@ -115,10 +115,24 @@ int DNSClient::inet_aton(const char* aIPAddrString, IPAddress& aResult)
     }
 }
 
-int DNSClient::getHostByName(const char* aHostname, IPAddress& aResult)
+int DNSClient::getHostByName(const char* aHostname, IPAddress& aResult) {
+	int result = startHostRequest(aHostname, aResult);
+	if (result > 0)
+		return result;
+	// Now wait for a response
+	int ret = 0;
+	while(ret == 0)
+	{
+		ret = getHostRequestResult(aResult);
+		if (ret == 0) {
+			delay(50);
+		}
+	}
+	return ret;
+}
+int DNSClient::startHostRequest(const char* aHostname, IPAddress& aResult)
 {
     int ret =0;
-
     // See if it's a numeric IP address
     if (inet_aton(aHostname, aResult))
     {
@@ -151,14 +165,9 @@ int DNSClient::getHostByName(const char* aHostname, IPAddress& aResult)
                     ret = iUdp.endPacket();
                     if (ret != 0)
                     {
-                        // Now wait for a response
-                        int wait_retries = 0;
-                        ret = TIMED_OUT;
-                        while ((wait_retries < 3) && (ret == TIMED_OUT))
-                        {
-                            ret = ProcessResponse(5000, aResult);
-                            wait_retries++;
-                        }
+						_startResolving = millis();
+						_resolving = 1;
+						return 0;
                     }
                 }
             }
@@ -251,18 +260,33 @@ uint16_t DNSClient::BuildRequest(const char* aName)
     return 1;
 }
 
+int DNSClient::getHostRequestResult(IPAddress& aAddress) {
+	if (!_resolving) {
+		return 2;
+	}
+	int ret = ProcessResponse(aAddress);
+	if (ret == SUCCESS) {
+		_resolving = 0;
+		return 1;
+	}
+	else if (ret == 255) {
+		if ((millis() - _startResolving) > 15000UL) {
+			_resolving = 0;
+			return 2;
+		}
+	}
+	else {
+		_resolving = 0;
+		return 2;
+	}
 
-uint16_t DNSClient::ProcessResponse(uint16_t aTimeout, IPAddress& aAddress)
+}
+
+uint16_t DNSClient::ProcessResponse( IPAddress& aAddress)
 {
-    uint32_t startTime = millis();
-
     // Wait for a response packet
-    while(iUdp.parsePacket() <= 0)
-    {
-        if((millis() - startTime) > aTimeout)
-            return TIMED_OUT;
-        delay(50);
-    }
+    if(iUdp.parsePacket() <= 0)
+		return 255;
 
     // We've had a reply!
     // Read the UDP header
