@@ -76,7 +76,7 @@ void EthernetClass::begin(uint8_t *mac, IPAddress local_ip, IPAddress dns_server
   W5100.setGatewayIp(gateway._address);
   W5100.setSubnetMask(subnet._address);
   _dnsServerAddress = dns_server;
-  _initialized = 0;
+  _initialized = 1;
 }
 
 int EthernetClass::maintain(){
