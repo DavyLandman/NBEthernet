@@ -31,7 +31,8 @@ int EthernetClass::initialized() {
 
 void EthernetClass::begin(uint8_t *mac_address)
 {
-	_dhcp = new DhcpClass();
+	static DhcpClass s_dhcp;
+	_dhcp = &s_dhcp;
 
 	// Initialise the basic info
 	W5100.init();
