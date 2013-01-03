@@ -81,7 +81,7 @@ void EthernetClass::begin(uint8_t *mac, IPAddress local_ip, IPAddress dns_server
 
 int EthernetClass::maintain(){
   int rc = DHCP_CHECK_NONE;
-  if(_dhcp != NULL){
+  if(_initialized && _dhcp != NULL){
     //we have a pointer to dhcp, use it
     rc = _dhcp->checkLease();
     switch ( rc ){
