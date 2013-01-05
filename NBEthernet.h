@@ -15,6 +15,7 @@ private:
   IPAddress _dnsServerAddress;
   DhcpClass* _dhcp;
   uint8_t _initialized;
+  uint8_t _releasing;
 public:
   static uint8_t _state[MAX_SOCK_NUM];
   static uint16_t _server_port[MAX_SOCK_NUM];
@@ -30,6 +31,8 @@ public:
   int initialized();
 
   int maintain();
+  int maintainNeeded();
+  int maintainFinished();
 
   IPAddress localIP();
   IPAddress subnetMask();

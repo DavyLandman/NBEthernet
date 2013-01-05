@@ -21,9 +21,11 @@ int EthernetClass::initialized() {
 		W5100.setSubnetMask(_dhcp->getSubnetMask().raw_address());
 		_dnsServerAddress = _dhcp->getDnsServerIp();
 		_initialized = 1;
+		_releasing = 0;
 	}
 	if (result == 2) {
 		_initialized = 1;
+		_releasing = 0;
 	}
 	return result;
 }
@@ -77,29 +79,49 @@ void EthernetClass::begin(uint8_t *mac, IPAddress local_ip, IPAddress dns_server
   W5100.setSubnetMask(subnet._address);
   _dnsServerAddress = dns_server;
   _initialized = 1;
+  _releasing = 0;
 }
 
-int EthernetClass::maintain(){
+int EthernetClass::maintain() {
+  int result = maintainNeeded();
+  if (result == DHCP_CHECK_NONE) {
+    return result;
+  }
+  if (result == DHCP_CHECK_REBIND_STARTED) {
+    result = 3;
+  }
+  int res = maintainFinished();
+  while (res == 0) {
+    delay(10);
+	res = maintainFinished();
+  }
+  return result + (res == 1 ? 1 : 0);
+}
+
+int EthernetClass::maintainFinished() {
+	int result = _dhcp->successful();
+	if (result == 1) {
+		_releasing = 0;
+		W5100.setIPAddress(_dhcp->getLocalIp().raw_address());
+		W5100.setGatewayIp(_dhcp->getGatewayIp().raw_address());
+		W5100.setSubnetMask(_dhcp->getSubnetMask().raw_address());
+		_dnsServerAddress = _dhcp->getDnsServerIp();
+	}
+	return result;
+}
+
+int EthernetClass::maintainNeeded(){
   int rc = DHCP_CHECK_NONE;
   if(_initialized && _dhcp != NULL){
+    if (_releasing) {
+	  return 1;
+	}
     //we have a pointer to dhcp, use it
     rc = _dhcp->checkLease();
-    switch ( rc ){
-      case DHCP_CHECK_NONE:
-        //nothing done
-        break;
-      case DHCP_CHECK_RENEW_OK:
-      case DHCP_CHECK_REBIND_OK:
-        //we might have got a new IP.
-        W5100.setIPAddress(_dhcp->getLocalIp().raw_address());
-        W5100.setGatewayIp(_dhcp->getGatewayIp().raw_address());
-        W5100.setSubnetMask(_dhcp->getSubnetMask().raw_address());
-        _dnsServerAddress = _dhcp->getDnsServerIp();
-        break;
-      default:
-        //this is actually a error, it will retry though
-        break;
-    }
+	if (rc != DHCP_CHECK_NONE) {
+	  _releasing = 1;
+	  return rc;
+	}
   }
   return rc;
 }

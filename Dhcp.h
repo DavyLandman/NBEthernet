@@ -53,6 +53,8 @@
 #define DHCP_CHECK_RENEW_OK     (2)
 #define DHCP_CHECK_REBIND_FAIL  (3)
 #define DHCP_CHECK_REBIND_OK    (4)
+#define DHCP_CHECK_RENEW_STARTED   (1)
+#define DHCP_CHECK_REBIND_STARTED  (2)
 
 enum
 {
@@ -179,6 +181,8 @@ public:
   void beginWithDHCP(uint8_t *, unsigned long timeout = 60000, unsigned long responseTimeout = 4000);
   // 0 = not finished, 1 = finished and successful, 2 = finished but failed 
   int successful();
+  // 0 = nothing needed, 1 = renew started, 2 = rebind started, if >0 call successful to wait for
+  // finishing the rebind/release
   int checkLease();
 };
 

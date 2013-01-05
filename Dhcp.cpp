@@ -394,13 +394,12 @@ uint8_t DhcpClass::tryParseDHCPResponse(uint32_t& transactionId) {
 }
 
 
+
 /*
     returns:
     0/DHCP_CHECK_NONE: nothing happened
-    1/DHCP_CHECK_RENEW_FAIL: renew failed
-    2/DHCP_CHECK_RENEW_OK: renew success
-    3/DHCP_CHECK_REBIND_FAIL: rebind fail
-    4/DHCP_CHECK_REBIND_OK: rebind success
+	1/DHCP_CHECK_RENEW_STARTED: a new renew was initiated, call successful()
+    2/DHCP_CHECK_REBIND_STARTED: a new rebind was initiated, call successful()
 */
 int DhcpClass::checkLease(){
     //this uses a signed / unsigned trick to deal with millis overflow
@@ -436,7 +435,8 @@ int DhcpClass::checkLease(){
         //if we have a lease but should renew, do it
         if (_dhcp_state == STATE_DHCP_LEASED && _renewInSec <=0){
             _dhcp_state = STATE_DHCP_REREQUEST;
-            rc = 1 + request_DHCP_lease();
+			init_new_DHCP_request();
+			rc = 1;
         }
 
         //if we have a lease or is renewing but should bind, do it
@@ -444,7 +444,8 @@ int DhcpClass::checkLease(){
             //this should basically restart completely
             _dhcp_state = STATE_DHCP_START;
             reset_DHCP_lease();
-            rc = 3 + request_DHCP_lease();
+			init_new_DHCP_request();
+			rc = 2;
         }
     }
     else{
