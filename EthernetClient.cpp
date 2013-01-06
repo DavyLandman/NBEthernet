@@ -21,41 +21,41 @@ EthernetClient::EthernetClient(uint8_t sock) : _sock(sock) {
 }
 
 int EthernetClient::initConnection(const char *host, uint16_t port) {
-	if (_dns) {
-		return 0; // init already busy
-	}
-	IPAddress ip;
-	_dns = new DNSClient();
-	_dns->begin(Ethernet.dnsServerIP());
-	int res = _dns->startHostRequest(host, ip);
-	if (res == 0) {
-		_dnsresolved = 0;
-		_port = port;
-		return 1;
-	}
-	else if (res == 1) {
-		delete _dns;
-		_dns = NULL;
-		return initConnection(ip, port);
-	}
-	else {
-		delete _dns;
-		_dns = NULL;
-		return 0;
-	}
+  if (_dns) {
+    return 0; // init already busy
+  }
+  IPAddress ip;
+  _dns = new DNSClient();
+  _dns->begin(Ethernet.dnsServerIP());
+  int res = _dns->startHostRequest(host, ip);
+  if (res == 0) {
+    _dnsresolved = 0;
+    _port = port;
+    return 1;
+  }
+  else if (res == 1) {
+    delete _dns;
+    _dns = NULL;
+    return initConnection(ip, port);
+  }
+  else {
+    delete _dns;
+    _dns = NULL;
+    return 0;
+  }
 }
 int EthernetClient::connect(const char* host, uint16_t port) {
-	if (!initConnection(host, port)) {
-		return 0;
-	}
-	int result = 0;
-	while (result == 0) {
-		result = finishedConnecting();
-		if (result == 0) {
-			delay(1);
-		}
-	}
-	return result == 1;
+  if (!initConnection(host, port)) {
+    return 0;
+  }
+  int result = 0;
+  while (result == 0) {
+    result = finishedConnecting();
+    if (result == 0) {
+      delay(1);
+    }
+  }
+  return result == 1;
 }
 
 int EthernetClient::initConnection(IPAddress ip, uint16_t port) {
@@ -87,56 +87,56 @@ int EthernetClient::initConnection(IPAddress ip, uint16_t port) {
 }
 
 int EthernetClient::connect(IPAddress ip, uint16_t port) {
-	if (!initConnection(ip, port)) {
-		return 0;
-	}
-	int result = 0;
-	while (result == 0) {
-		result = finishedConnecting();
-		if (result == 0) {
-			delay(1);
-		}
-	}
-	return result == 1;
+  if (!initConnection(ip, port)) {
+    return 0;
+  }
+  int result = 0;
+  while (result == 0) {
+    result = finishedConnecting();
+    if (result == 0) {
+      delay(1);
+    }
+  }
+  return result == 1;
 }
 
 uint8_t EthernetClient::finishedConnecting() {
-	if (!_dnsresolved) {
-		IPAddress ip;
-		int result = _dns->getHostRequestResult(ip);
-		if (result == 1) {
-			_dnsresolved = 1;
-			delete _dns;
-			_dns = NULL;
-			return initConnection(ip, _port) == 1 ? 0 : 2;
-		}
-		else if (result > 1) {
-			delete _dns;
-			_dns = NULL;
-			_sock = MAX_SOCK_NUM;
-			return 2;
-		}
-		return 0;
-	}
-	else {
-		if (_established) {
-			return _established;
-		}
-		if (_sock == MAX_SOCK_NUM) {
-			return 2;
-		}
-		if (status() != SnSR::ESTABLISHED) {
-			_established = 0;
-			if (status() == SnSR::CLOSED) {
-				_sock = MAX_SOCK_NUM;
-				return 2;
-			}
-		}
-		else {
-			_established = 1;
-		}
-		return _established;
-	}
+  if (!_dnsresolved) {
+    IPAddress ip;
+    int result = _dns->getHostRequestResult(ip);
+    if (result == 1) {
+      _dnsresolved = 1;
+      delete _dns;
+      _dns = NULL;
+      return initConnection(ip, _port) == 1 ? 0 : 2;
+    }
+    else if (result > 1) {
+      delete _dns;
+      _dns = NULL;
+      _sock = MAX_SOCK_NUM;
+      return 2;
+    }
+    return 0;
+  }
+  else {
+    if (_established) {
+      return _established;
+    }
+    if (_sock == MAX_SOCK_NUM) {
+      return 2;
+    }
+    if (status() != SnSR::ESTABLISHED) {
+      _established = 0;
+      if (status() == SnSR::CLOSED) {
+        _sock = MAX_SOCK_NUM;
+        return 2;
+      }
+    }
+    else {
+      _established = 1;
+    }
+    return _established;
+  }
 }
 
 size_t EthernetClient::write(uint8_t b) {
@@ -217,10 +217,10 @@ uint8_t EthernetClient::connected() {
   if (_sock == MAX_SOCK_NUM) return 0;
   if (_dnsresolved == 0) return 0;
   if (_established == 0) return 0;
-  
+
   uint8_t s = status();
   return !(s == SnSR::LISTEN || s == SnSR::CLOSED || s == SnSR::FIN_WAIT ||
-    (s == SnSR::CLOSE_WAIT && !available()));
+      (s == SnSR::CLOSE_WAIT && !available()));
 }
 
 uint8_t EthernetClient::status() {

@@ -11,20 +11,20 @@
 
 void DhcpClass::beginWithDHCP(uint8_t *mac, unsigned long timeout, unsigned long responseTimeout)
 {
-    _dhcpLeaseTime=0;
-    _dhcpT1=0;
-    _dhcpT2=0;
-    _lastCheck=0;
-    _timeout = timeout;
-    _responseTimeout = responseTimeout;
+  _dhcpLeaseTime=0;
+  _dhcpT1=0;
+  _dhcpT2=0;
+  _lastCheck=0;
+  _timeout = timeout;
+  _responseTimeout = responseTimeout;
 
-    // zero out _dhcpMacAddr
-    memset(_dhcpMacAddr, 0, 6); 
-    reset_DHCP_lease();
+  // zero out _dhcpMacAddr
+  memset(_dhcpMacAddr, 0, 6); 
+  reset_DHCP_lease();
 
-    memcpy((void*)_dhcpMacAddr, (void*)mac, 6);
-    _dhcp_state = STATE_DHCP_START;
-	init_new_DHCP_request();
+  memcpy((void*)_dhcpMacAddr, (void*)mac, 6);
+  _dhcp_state = STATE_DHCP_START;
+  init_new_DHCP_request();
 }
 
 void DhcpClass::reset_DHCP_lease(){
@@ -34,44 +34,44 @@ void DhcpClass::reset_DHCP_lease(){
 
 // 0 = not finished, 1 = finished and successful, 2 = finished but failed 
 int DhcpClass::successful() {
-	int result = step_DHCP_lease();
-	if ((millis() - _startTime) > _timeout) {
-		result = 2;
-	}
-	if (result > 0) {
-		_dhcpUdpSocket.stop();
-		_dhcpTransactionId++;
-	}
-	return result;
+  int result = step_DHCP_lease();
+  if ((millis() - _startTime) > _timeout) {
+    result = 2;
+  }
+  if (result > 0) {
+    _dhcpUdpSocket.stop();
+    _dhcpTransactionId++;
+  }
+  return result;
 }
 
 void DhcpClass::init_new_DHCP_request(){
-    // Pick an initial transaction ID
-    _dhcpTransactionId = random(1UL, 2000UL);
-    _dhcpInitialTransactionId = _dhcpTransactionId;
+  // Pick an initial transaction ID
+  _dhcpTransactionId = random(1UL, 2000UL);
+  _dhcpInitialTransactionId = _dhcpTransactionId;
 
-    if (_dhcpUdpSocket.begin(DHCP_CLIENT_PORT) == 0)
-    {
-	  _dhcp_state = STATE_DHCP_CONNECTION_FAILED;
-    }
-    _startTime = millis();
+  if (_dhcpUdpSocket.begin(DHCP_CLIENT_PORT) == 0)
+  {
+    _dhcp_state = STATE_DHCP_CONNECTION_FAILED;
+  }
+  _startTime = millis();
 }
 
 //return:0 on error, 1 if request is sent and response is received
 int DhcpClass::request_DHCP_lease(){
-	init_new_DHCP_request();
+  init_new_DHCP_request();
 
-	presend_DHCP();
+  presend_DHCP();
 
-	int result = 0;
-	do {
-		result = step_DHCP_lease();
-	} while(result == 0 && ((millis() - _startTime) > _timeout));
+  int result = 0;
+  do {
+    result = step_DHCP_lease();
+  } while(result == 0 && ((millis() - _startTime) > _timeout));
 
-	_dhcpUdpSocket.stop();
-	_dhcpTransactionId++;
+  _dhcpUdpSocket.stop();
+  _dhcpTransactionId++;
 
-	return result == 1;
+  return result == 1;
 }
 
 int DhcpClass::step_DHCP_lease(){
